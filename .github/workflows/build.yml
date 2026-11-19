@@ -1,0 +1,35 @@
+name: Build WandEnhancer
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Kodu Cek
+        uses: actions/checkout@v4
+
+      - name: Node.js Kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: pnpm Kur
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: MSBuild Kur
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Derle (build.ps1)
+        shell: pwsh
+        run: .\build.ps1 -Configuration Release
+
+      - name: Exe Dosyasini Paketle
+        uses: actions/upload-artifact@v4
+        with:
+          name: WandEnhancer-Release
+          path: WandEnhancer/bin/Release/
