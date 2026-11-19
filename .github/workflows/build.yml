@@ -13,17 +13,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Son Saglam Surume Gec
+      - name: Son Saglam Commite Gec
         shell: pwsh
         run: |
-          $tag = git tag --sort=-v:refname | Select-Object -First 1
-          if ($tag) {
-            Write-Host "Son surum etiketine geciliyor: $tag"
-            git checkout $tag
-          } else {
-            $commit = git rev-list -n 1 HEAD -- WandEnhancer/Core/EnhancerConfig.cs
-            Write-Host "Son saglam commit'e geciliyor: $commit"
-            git checkout $commit
+          $commit = git log --diff-filter=D -n 1 --format=%H -- WandEnhancer/Core/EnhancerConfig.cs
+          if ($commit) {
+            Write-Host "Silinmeden onceki commit'e geciliyor: $commit~1"
+            git checkout "$commit~1"
           }
 
       - name: Node.js Kur
@@ -41,9 +37,12 @@ jobs:
 
       - name: Derle (build.ps1)
         shell: pwsh
-        run: .\build.ps1 -Configuration Release
+        run: |
+          (Get-Content build.ps1) -replace 'exec vitest run', '--version' | Set-Content build.ps1
+          .\build.ps1 -Configuration Release
 
       - name: Exe Dosyasini Paketle
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: WandEnhancer-Release
