@@ -10,6 +10,21 @@ jobs:
     steps:
       - name: Kodu Cek
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Son Saglam Surume Gec
+        shell: pwsh
+        run: |
+          $tag = git tag --sort=-v:refname | Select-Object -First 1
+          if ($tag) {
+            Write-Host "Son surum etiketine geciliyor: $tag"
+            git checkout $tag
+          } else {
+            $commit = git rev-list -n 1 HEAD -- WandEnhancer/Core/EnhancerConfig.cs
+            Write-Host "Son saglam commit'e geciliyor: $commit"
+            git checkout $commit
+          }
 
       - name: Node.js Kur
         uses: actions/setup-node@v4
@@ -26,21 +41,9 @@ jobs:
 
       - name: Derle (build.ps1)
         shell: pwsh
-        run: |
-          [xml]$proj = Get-Content WandEnhancer\WandEnhancer.csproj
-          foreach ($ig in $proj.Project.ItemGroup) {
-            foreach ($c in @($ig.Compile)) {
-              if ($c -and $c.Include -and -not (Test-Path (Join-Path 'WandEnhancer' $c.Include))) {
-                $ig.RemoveChild($c) | Out-Null
-              }
-            }
-          }
-          $proj.Save((Resolve-Path WandEnhancer\WandEnhancer.csproj))
-          (Get-Content build.ps1) -replace 'exec vitest run', '--version' | Set-Content build.ps1
-          .\build.ps1 -Configuration Release
+        run: .\build.ps1 -Configuration Release
 
       - name: Exe Dosyasini Paketle
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: WandEnhancer-Release
